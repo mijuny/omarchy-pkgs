@@ -1,0 +1,40 @@
+_pkgname=asus-wmi-platform-mute-led
+_pkgver=0.1
+
+post_install() {
+  dkms add "$_pkgname/$_pkgver"
+  dkms install --no-depmod "$_pkgname/$_pkgver"
+  depmod -a "$(uname -r)" 2>/dev/null || true
+
+  # If asus_wmi is currently loaded, swap in the patched module so the
+  # F1 LED appears without requiring a reboot. Best-effort.
+  if lsmod | grep -q '^asus_wmi'; then
+    modprobe -r asus_armoury asus_nb_wmi asus_wmi 2>/dev/null || true
+    modprobe asus_wmi      2>/dev/null || true
+    modprobe asus_nb_wmi   2>/dev/null || true
+    modprobe asus_armoury  2>/dev/null || true
+  fi
+
+  cat <<MSG
+
+asus-wmi-platform-mute-led-dkms installed.
+
+Adds platform::mute LED on ASUS laptops that expose WMI device ID
+0x0004001C (confirmed on B9406CAA; likely others). Probe gates on
+asus_wmi_dev_is_present(), so unaffected machines see no change.
+
+Verify with: ls /sys/class/leds/ | grep platform::mute
+
+MSG
+}
+
+post_upgrade() {
+  pre_remove "$@"
+  post_install "$@"
+}
+
+pre_remove() {
+  if dkms status | grep -q "^$_pkgname/"; then
+    dkms remove "$_pkgname/$_pkgver" --all 2>/dev/null || true
+  fi
+}

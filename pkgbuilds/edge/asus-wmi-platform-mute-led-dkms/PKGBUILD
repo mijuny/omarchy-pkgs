@@ -1,0 +1,45 @@
+# Maintainer: Mikko Nyman <mikko@nyman.xyz>
+#
+# Patched `asus_wmi` kernel module that registers /sys/class/leds/
+# platform::mute for ASUS laptops exposing WMI device ID 0x0004001C
+# (the F1 speaker-mute LED). Confirmed on the ASUS ExpertBook Ultra
+# B9406CAA; probe gates on asus_wmi_dev_is_present() so it is a no-op
+# on hardware that doesn't expose the device.
+#
+# Packaged as DKMS so kernel upgrades rebuild automatically. Once the
+# upstream patch lands in mainline asus_wmi, this package becomes
+# obsolete and is deleted from OPR.
+#
+# Upstream patch: 0001-platform-x86-asus-wmi-add-speaker-mute-LED.patch
+# (in omarchy-dev/, ready to mail to linux-asus@vger.kernel.org).
+
+_pkgname=asus-wmi-platform-mute-led
+pkgname=${_pkgname}-dkms
+pkgver=0.1
+pkgrel=1
+pkgdesc="Patched asus_wmi kernel module adding platform::mute LED (DKMS)"
+arch=(any)
+url="https://github.com/omacom-io/omarchy-pkgs"
+license=(GPL-2.0-or-later)
+depends=(dkms)
+
+source=(
+  asus-wmi.c
+  asus-wmi.h
+  Makefile
+  dkms.conf
+)
+sha256sums=(SKIP SKIP SKIP SKIP)
+
+install=${pkgname}.install
+
+package() {
+  local destdir="$pkgdir/usr/src/${_pkgname}-${pkgver}"
+  install -dm755 "$destdir"
+  install -Dm644 "$srcdir/asus-wmi.c" "$destdir/asus-wmi.c"
+  install -Dm644 "$srcdir/asus-wmi.h" "$destdir/asus-wmi.h"
+  install -Dm644 "$srcdir/Makefile"   "$destdir/Makefile"
+  install -Dm644 "$srcdir/dkms.conf"  "$destdir/dkms.conf"
+}
+
+# vim:set sw=2 sts=-1 et:
